@@ -63,6 +63,7 @@ class Ruler:
         # initial possible players
         self.possible_player = [player for player in self.player_list if player.limit_level != 3]
         self.now_player = self.possible_player[self.turn]
+
         if self.recent_card == None:
             self.now_player.limit_level = 1
 
@@ -82,7 +83,6 @@ class Ruler:
         self.is_first_turn = True
         for player in self.player_list:
             if player.limit_level == 2:
-                player.limit_level = 1
                 self.turn = self.player_list.index(player)
             else: player.limit_level = 2
 

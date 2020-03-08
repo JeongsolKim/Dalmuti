@@ -41,6 +41,7 @@ while not GameRuler.game_done:
     total_in_action = len(GameRuler.possible_player)
     if total_in_action == 1: # if all players except one have limit level 3.
         GameRuler.next_cycle()
+        utils.check_state_level(GameRuler.player_list)
         continue
 
     if GameRuler.turn + 1 < total_in_action: GameRuler.turn += 1
