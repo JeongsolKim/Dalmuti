@@ -1,19 +1,25 @@
 from ruler import Ruler
-import utils
+import utils, os, time
 
 # Initialize the game.
 # 1. Input the number of players.
 print('Welcome! This is the Dalmuti game.')
 print('Input how many people will do the game(4 ~ 8).')
-N = int(input('The total player number is... : ')) # string exception should be made.
-while N<4 or 8<N:
-    print('Please input between 4 and 8.')
-    N = int(input('The player number is... : '))
+while True:
+    N = input('The player number is... : ')
+    if N not in ['4','5','6','7','8']:
+        print('Please input between 4 and 8.')
+    else:
+        N = int(N)
+        break
 
-H = int(input('The human player number is... : '))
-while H>N or H<1:
-    print('Please input right number. It should be larger than 1 and less or equal than total number.')
-    H = int(input('The human player number is... : '))
+while True:
+    H = input('The human player number is... : ')
+    if H not in [str(x+1) for x in range(N)]:
+        print('Please input right number. It should be larger than 1 and less or equal than total number.')
+    else:
+        H = int(H)
+        break
 
 # 2. Create the ruler.
 GameRuler = Ruler(N, H)
@@ -28,7 +34,10 @@ GameRuler.init_game()
 # utils.check_submit(GameRuler, 0)
 
 # 4. Game start.
-print('Game start!')
+time.sleep(1)
+os.system('cls')
+
+print('Game start!\n')
 while not GameRuler.game_done:
     #utils.shut_down_computers(GameRuler.player_list)
 
@@ -49,15 +58,19 @@ while not GameRuler.game_done:
     # debug
     # utils.check_state_level(GameRuler.player_list)
 
+os.system('cls')
 print("Game Done!!")
+# add left player :<.
+GameRuler.winner.append(GameRuler.player_list[0].name)
+
 print("Total cycle: "+str(GameRuler.cycle_num))
 for winner_num in range(len(GameRuler.winner)):
     if winner_num == 0:
-        print('1st winner: ' + GameRuler.winner[winner_num])
+        print('1st winner : ' + GameRuler.winner[winner_num])
     elif winner_num == 1:
-        print('2nd winner: ' + GameRuler.winner[winner_num])
+        print('2nd winner : ' + GameRuler.winner[winner_num])
     elif winner_num == 2:
-        print('3rd winner: ' + GameRuler.winner[winner_num])
+        print('3rd winner : ' + GameRuler.winner[winner_num])
     else:
         print(str(winner_num+1)+'th winner: ' + GameRuler.winner[winner_num])
 

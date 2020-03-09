@@ -1,6 +1,6 @@
 from card import Card
 from player import Player
-import random
+import random, os
 
 class Ruler:
     def __init__(self,N,H):
@@ -20,11 +20,26 @@ class Ruler:
         self.make_card_set()
         self.give_card_set()
 
+    def check_name_exist(self, input_name):
+        if input_name in [x.name for x in self.player_list]:
+            return True
+        return False
+
     def create_players(self):
         for computer in range(self.total_player_num-self.human_player_num):
             self.player_list.append(Player('computer'+str(computer+1)))
         for human in range(self.human_player_num):
-            name = input('Please enter the name of player '+str(human+1)+' : ')
+            good_name = False
+            while not good_name:
+                name = input('Please enter the name of player ' + str(human + 1) + ' : ')
+                if self.check_name_exist(name):
+                    print('Entered name already exists.')
+                    continue
+                elif name.strip() == '':
+                    print('Please enter the name with at least one character.')
+                    continue
+                else:
+                    good_name = True
             self.player_list.append(Player(name, True))
 
         # shuffle it.
@@ -85,6 +100,7 @@ class Ruler:
         self.now_player = self.possible_player[self.turn]
 
         if self.recent_card == None:
+            print('A new cycle begin! The first player is '+ self.now_player.name+'.\n')
             self.now_player.limit_level = 1
 
         if self.now_player.limit_level != 3:  # this person already die.

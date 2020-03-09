@@ -1,4 +1,4 @@
-# this file is for debug.
+import itertools
 
 def check_card_separation(player_list):
     for p in player_list:
@@ -43,3 +43,11 @@ def shut_down_computers(player_list):
     for p in player_list:
         if not p.human:
             p.limit_level = 3
+
+def make_combinations(target_list):
+    output = []
+    for i in range(len(target_list)):
+        output = output + list(map(list,(set(itertools.combinations(target_list, i+1)))))
+    return output
+
+

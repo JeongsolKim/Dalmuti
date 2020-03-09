@@ -1,4 +1,4 @@
-import utils
+import utils, os, random
 
 class Player:
     def __init__(self, name, human=False):
@@ -20,7 +20,6 @@ class Player:
         if not self.card_ref:
             for c in self.card_list:
                 self.card_ref.append(str(c.number))
-        print(self.card_ref)
 
         # split input string and sorting.
         for char in input_card.strip().split(' '):
@@ -92,10 +91,14 @@ class Player:
             self.submission_history.append(self.card_list.pop(card_index_in_card_list))
             self.card_ref.remove(input_card.number)
         self.submitted_card = submit
+        temp_message = sorted([x.number for x in self.submitted_card])
         return True
 
     def do_game(self, recent_card): # for real player.
         print('Player '+self.name +"'s turn.")
+        if recent_card:
+            print('Recent submit : '+' '.join([card.value for card in recent_card])+'.')
+        # print cards that now player has.
         utils.check_card_separation([self])
         player_input = input("Select your cards : ")
         is_submit = self.submit_card(player_input, recent_card)
@@ -104,5 +107,68 @@ class Player:
             player_input = input("Select your cards : ")
             is_submit = self.submit_card(player_input, recent_card)
 
+        print('\n')
+
     def auto_game(self,recent_card): # for computers.
         print(self.name + "'s turn.")
+        # how to?
+        # 1. get possible card set list to submit.
+        # 2. Among possible set, choose...
+        #   - random one (level 1, easy)
+        #   - the first one (level 2, normal)
+        #   - calculate probability (level 3, little bit hard)
+        if recent_card:
+            print('Recent submit : '+' '.join([card.value for card in recent_card])+'.')
+        utils.check_card_separation([self])
+
+        computer_input = self.computer_method(recent_card)
+
+        is_submit = self.submit_card(computer_input, recent_card)
+        while not is_submit:
+            utils.check_card_separation([self])
+            player_input = input("Select your cards : ")
+            is_submit = self.submit_card(player_input, recent_card)
+
+        if self.limit_level == 3:
+            print(self.name + ' calls die!')
+        print('\n')
+
+    def computer_method(self, recent_card, level = 1):
+        if recent_card:
+            submit_count = len(recent_card)
+            submit_value = int(recent_card[0].value)
+        else:
+            submit_count = None
+            submit_value = 99999
+
+        Jocker = 0
+        temp = []
+        for card in self.card_list:
+            if int(card.value) == 13: Jocker += 1
+            if int(card.value) < submit_value: temp.append(card.value)
+
+        unique_temp = list(set(temp))
+        possible_set = []
+        for value in unique_temp:
+            if submit_count:
+                if temp.count(value) >= submit_count:
+                    possible_set.append([value]*submit_count)
+                elif temp.count(value) + Jocker >= submit_count:
+                    for j in range(Jocker):
+                        possible_set.append([value]*(submit_count-j-1)+[13]*(j+1))
+            else:
+                possible_set = possible_set + utils.make_combinations([value]*temp.count(value))
+
+        if not possible_set:
+            return 'die'
+
+        if level == 1:
+            submit = random.choice(possible_set)
+            submit = list(map(str,submit))
+            return ' '.join(submit)
+
+        return 'die'
+
+
+
+
