@@ -2,12 +2,13 @@
 
 def check_card_separation(player_list):
     for p in player_list:
-        temp = ''
+        temp = []
         for c in p.card_list:
-            temp = temp + str(c.value)+' '
-
+            temp.append(int(c.number))
+        temp = sorted(temp)
+        temp = list(map(str,temp))
         print('Cards of '+p.name+' are :')
-        print(temp)
+        print(' '.join(temp))
 
 def check_state_level(player_list):
     statement = ''
