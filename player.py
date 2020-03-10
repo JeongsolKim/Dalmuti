@@ -1,7 +1,7 @@
-import utils, os, random
+import utils, os, random, time
 
 class Player:
-    def __init__(self, name, human=False):
+    def __init__(self, name, human, speed):
         self.name = name
         self.human = human
         self.card_list = []
@@ -10,8 +10,28 @@ class Player:
         self.submitted_card = []
         # 1 can submit any combination of cards. 2 should follow the rule. 3 cannot submit any cards.
         self.limit_level = 2
+        self.revolution_probability = 0.5
+        self.sudo_thinking_time = speed
+
+    def do_I_want_revolution(self):
+        if self.human:
+            ans = input('You can make REVOLUTION!!!. Will you? (y/n) : ').lower()
+            while ans not in ['y','n','yes','no']:
+                ans = input('Wrong input. You can make REVOLUTION!!!. Will you? (y/n) : ').lower()
+            if ans in ['y','n','yes','no']:
+                return True
+            return False
+
+        else:
+            if self.revolution_probability > random.uniform(0.0, 1.0):
+                print(self.name+' decides to make the revolution!!.')
+                return True
+            return False
 
     def submit_card(self, input_card, recent_card):
+
+        #print('input: '+input_card)
+
         if input_card == 'die' or input_card == 'Die' or input_card == 'pass' or  input_card == '-1' :
             self.limit_level = 3
             return True
@@ -67,19 +87,21 @@ class Player:
         for card in card_num:
             input_card_index = self.card_ref.index(card)
             input_card = self.card_list[input_card_index]
-            if input_card.number == '13': # actually, this does not have to use if.
-                input_card.value = card_num[0]
+            if input_card.number == '13':
+                if input_cards:
+                    input_card.value = input_cards[0].value
 
             input_cards.append(input_card)
 
         # check limitation.
         if recent_card != None: # always limit_level = 2.
+            #print('recent: '+str(recent_value[0]+' input: '+str(input_cards[0].value)))
             # number check.
             if len(recent_value) != len(input_cards):
                 print('Wrong submit. You should submit the same number of cards to previous submission.')
                 return False
             # value check.
-            if int(recent_value[0])<=int(input_cards[0].value):
+            if int(recent_value[0]) <= int(input_cards[0].value):
                 print('Wrong submit. You should submit the less value cards than previous submission.')
                 return False
 
@@ -91,13 +113,13 @@ class Player:
             self.submission_history.append(self.card_list.pop(card_index_in_card_list))
             self.card_ref.remove(input_card.number)
         self.submitted_card = submit
-        temp_message = sorted([x.number for x in self.submitted_card])
+        #temp_message = sorted([x.number for x in self.submitted_card])
         return True
 
     def do_game(self, recent_card): # for real player.
         print('Player '+self.name +"'s turn.")
         if recent_card:
-            print('Recent submit : '+' '.join([card.value for card in recent_card])+'.')
+            print('Recent submit : '+' '.join([card.number for card in recent_card])+'.')
         # print cards that now player has.
         utils.check_card_separation([self])
         player_input = input("Select your cards : ")
@@ -118,19 +140,21 @@ class Player:
         #   - the first one (level 2, normal)
         #   - calculate probability (level 3, little bit hard)
         if recent_card:
-            print('Recent submit : '+' '.join([card.value for card in recent_card])+'.')
-        utils.check_card_separation([self])
+            print('Recent submit : '+' '.join([card.number for card in recent_card])+'.')
+        #utils.check_card_separation([self])
 
+        # Thinking time
+        time.sleep(self.sudo_thinking_time)
         computer_input = self.computer_method(recent_card)
-
         is_submit = self.submit_card(computer_input, recent_card)
         while not is_submit:
-            utils.check_card_separation([self])
-            player_input = input("Select your cards : ")
-            is_submit = self.submit_card(player_input, recent_card)
+            computer_input = self.computer_method(recent_card)
+            is_submit = self.submit_card(computer_input, recent_card)
 
-        if self.limit_level == 3:
-            print(self.name + ' calls die!')
+        if self.limit_level != 3:
+            print(self.name+' submits '+computer_input+'.')
+        elif self.limit_level == 3:
+            print(self.name + ' pass!')
         print('\n')
 
     def computer_method(self, recent_card, level = 1):
@@ -144,8 +168,8 @@ class Player:
         Jocker = 0
         temp = []
         for card in self.card_list:
-            if int(card.value) == 13: Jocker += 1
-            if int(card.value) < submit_value: temp.append(card.value)
+            if int(card.number) == 13: Jocker += 1
+            if int(card.value) < submit_value: temp.append(card.number)
 
         unique_temp = list(set(temp))
         possible_set = []
@@ -154,6 +178,8 @@ class Player:
                 if temp.count(value) >= submit_count:
                     possible_set.append([value]*submit_count)
                 elif temp.count(value) + Jocker >= submit_count:
+                    if unique_temp == ['13']: # if player can submit only Jockers (in case of revolution)
+                        continue
                     for j in range(Jocker):
                         possible_set.append([value]*(submit_count-j-1)+[13]*(j+1))
             else:
@@ -166,7 +192,6 @@ class Player:
             submit = random.choice(possible_set)
             submit = list(map(str,submit))
             return ' '.join(submit)
-
         return 'die'
 
 

@@ -3,7 +3,7 @@ from player import Player
 import random, os
 
 class Ruler:
-    def __init__(self,N,H):
+    def __init__(self,N,H, speed=10):
         self.game_done = False
         self.turn = 0
         self.cycle_num = 0
@@ -11,12 +11,30 @@ class Ruler:
         self.total_player_num = N
         self.human_player_num = H
         self.player_list = [] # list of players who play the game.
+        self.finish_player = []
         self.init_card_set = []
         self.recent_card = None
         self.last_submit_player = None
+        self.speed = 1.1 - speed/10
 
     def init_game(self):
         self.create_players()
+        self.make_card_set()
+        self.give_card_set()
+
+    def prepare_next_game(self):
+        self.player_reorder()
+        self.game_done = False
+        self.recent_card = None
+        self.last_submit_player = None
+
+        for player in self.player_list:
+            player.card_list = []
+            player.card_ref = []
+            player.submitted_card = []
+            player.limit_level = 2
+            player.submission_history.append('new_Game ->')
+
         self.make_card_set()
         self.give_card_set()
 
@@ -27,7 +45,7 @@ class Ruler:
 
     def create_players(self):
         for computer in range(self.total_player_num-self.human_player_num):
-            self.player_list.append(Player('computer'+str(computer+1)))
+            self.player_list.append(Player('computer'+str(computer+1), False, self.speed))
         for human in range(self.human_player_num):
             good_name = False
             while not good_name:
@@ -40,13 +58,14 @@ class Ruler:
                     continue
                 else:
                     good_name = True
-            self.player_list.append(Player(name, True))
+            self.player_list.append(Player(name, True, self.speed))
 
         # shuffle it.
         random.shuffle(self.player_list)
         print('All players are created.')
 
     def make_card_set(self):
+        self.init_card_set = []
         for i in range(12):
             for j in range(i+1):
                 self.init_card_set.append(Card(str(i+1),str(i+1)))
@@ -63,13 +82,46 @@ class Ruler:
             code = (i+1)%self.total_player_num
             self.player_list[code].card_list.append(self.init_card_set[i])
 
+        # for N=6 or 7, calibrate the order.
+        if self.total_player_num == 6:
+            for i in range(2):
+                self.player_list.insert(len(self.player_list), self.player_list.pop(1))
+
+        elif self.total_player_num == 7:
+            for i in range(3):
+                self.player_list.insert(len(self.player_list), self.player_list.pop(1))
         print('All cards are given.')
 
+    def player_reorder(self):
+        self.player_list = self.finish_player + self.player_list
+        self.finish_player = []
+        self.winner = []
+
+        if self.total_player_num == 6:
+            for i in range(2):
+                self.player_list.insert(0, self.player_list.pop(-1))
+        elif self.total_player_num == 7:
+            for i in range(3):
+                self.player_list.insert(0, self.player_list.pop(-1))
+
     # Functions for the game.
+    def revolution_check(self):
+        for player in self.player_list:
+            cards = [c.number for c in player.card_list]
+            if cards.count('13') == 2:
+                ans = player.do_I_want_revolution()
+                if ans:
+                    return True
+        return False
+
+    def revolution(self):
+        for player in self.player_list:
+            for c in player.card_list:
+                c.value = str(13 - int(c.value))
+
     def are_you_done(self, player):
         if len(player.card_list) == 0:
             self.winner.append(player.name)
-            #self.player_list.remove(player)
             return True
         return False
 
@@ -82,7 +134,8 @@ class Ruler:
         else:
             if self.fin:  # if now_player have done the game.
                 # Record the index of the player. It will be used for a specific case.
-                # Remove the player from the list.
+                # Remove the player from the list and add to other list.
+                self.finish_player.append(self.now_player)
                 self.player_list.remove(self.now_player)
                 # For every case except following one, keep the turn number.
                 # possible_player still contain the player who have done the game.
@@ -100,7 +153,7 @@ class Ruler:
         self.now_player = self.possible_player[self.turn]
 
         if self.recent_card == None:
-            print('A new cycle begin! The first player is '+ self.now_player.name+'.\n')
+            print('A new round begin! The first player is '+ self.now_player.name+'.\n')
             self.now_player.limit_level = 1
 
         if self.now_player.limit_level != 3:  # this person already die.
